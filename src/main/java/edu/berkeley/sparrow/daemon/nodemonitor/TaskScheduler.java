@@ -180,7 +180,9 @@ public abstract class TaskScheduler {
     InetSocketAddress newAddress = new InetSocketAddress(
         task.schedulerAddress.getHostName(), SchedulerThrift.DEFAULT_GET_TASK_PORT);
     try {
+      LOG.debug("Attempting to get getTask client for request " + task.requestId);
       getTaskClient = getTaskClientPool.borrowClient(newAddress);
+      LOG.debug("Acquired getTask client for request " + task.requestId);
     } catch (Exception e) {
       LOG.fatal("Unable to create client to contact scheduler at " +
           newAddress.toString() + ":" + e);
@@ -277,7 +279,9 @@ public abstract class TaskScheduler {
       LOG.debug("GetTask() RPC for request " + task.requestId + " completed in " +  rpcTime +
                 "ms (" + numGarbageCollections + "GCs occured during RPC)");
       try {
-        LOG.debug("Returning client for request " + task.requestId);
+        LOG.debug("Returning client for request " + task.requestId + ". Idle clients: " +
+            getTaskClientPool.getNumIdle(getTaskAddress) + "; active clients: " +
+            getTaskClientPool.getNumActive(getTaskAddress));
         getTaskClientPool.returnClient(getTaskAddress, (AsyncClient) response.getClient());
         LOG.debug("Client returned for request " + task.requestId + ". Idle clients: " +
                   getTaskClientPool.getNumIdle(getTaskAddress) + "; active clients: " +
@@ -302,6 +306,7 @@ public abstract class TaskScheduler {
             getTaskClientPool.getNumIdle(getTaskAddress) + "; active clients: " +
             getTaskClientPool.getNumActive(getTaskAddress));
         noTaskForRequest(task);
+        LOG.debug("returning from rquest " + task.requestId);
         return;
       }
 
@@ -314,6 +319,7 @@ public abstract class TaskScheduler {
                 task.taskSpec.getTaskId());
 
       try {
+        LOG.debug("PUtting task for request " + task.requestId + " in runnable queue");
         runnableTaskQueue.put(task);
       } catch (InterruptedException e) {
         LOG.fatal(e);
