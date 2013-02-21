@@ -274,12 +274,16 @@ public abstract class TaskScheduler {
       LOG.debug(Logging.functionCall(response));
       long rpcTime = System.currentTimeMillis() - startTimeMillis;
       long numGarbageCollections = Logging.getGCCount() - startGCCount;
-      LOG.debug("GetTask() RPC completed in " +  rpcTime + "ms (" + numGarbageCollections +
-                "GCs occured during RPC)");
+      LOG.debug("GetTask() RPC for request " + task.requestId + " completed in " +  rpcTime +
+                "ms (" + numGarbageCollections + "GCs occured during RPC)");
       try {
+        LOG.debug("Returning client for request " + task.requestId);
         getTaskClientPool.returnClient(getTaskAddress, (AsyncClient) response.getClient());
+        LOG.debug("Client returned for request " + task.requestId + ". Idle clients: " +
+                  getTaskClientPool.getNumIdle(getTaskAddress) + "; active clients: " +
+                  getTaskClientPool.getNumActive(getTaskAddress));
       } catch (Exception e) {
-        LOG.error("Error getting client from scheduler client pool: " + e.getMessage());
+        LOG.error("Error returning client to scheduler client pool: " + e.getMessage());
         return;
       }
       List<TTaskLaunchSpec> taskLaunchSpecs;
@@ -294,6 +298,9 @@ public abstract class TaskScheduler {
 
       if (taskLaunchSpecs.isEmpty()) {
         LOG.debug("Didn't receive a task for request " + task.requestId);
+        LOG.debug("Idle clients: " +
+            getTaskClientPool.getNumIdle(getTaskAddress) + "; active clients: " +
+            getTaskClientPool.getNumActive(getTaskAddress));
         noTaskForRequest(task);
         return;
       }
