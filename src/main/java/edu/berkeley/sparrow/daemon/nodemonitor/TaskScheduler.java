@@ -175,12 +175,15 @@ public abstract class TaskScheduler {
 
   protected void makeTaskRunnable(TaskSpec task) {
     LOG.debug("Attempting to get task for request " + task.requestId +
-              " (previous task: " + task.previousTaskId + ")");
+              " (previous request/task: " + task.previousRequestId + "/" +
+              task.previousTaskId + ")");
     GetTaskService.AsyncClient getTaskClient;
     InetSocketAddress newAddress = new InetSocketAddress(
         task.schedulerAddress.getHostName(), SchedulerThrift.DEFAULT_GET_TASK_PORT);
     try {
-      LOG.debug("Attempting to get getTask client for request " + task.requestId);
+      LOG.debug("Attempting to get getTask client for request " + task.requestId +
+          " (currently active clients: " + getTaskClientPool.getNumActive(newAddress) +
+          "; currently idle clients: " + getTaskClientPool.getNumIdle(newAddress) + ")");
       getTaskClient = getTaskClientPool.borrowClient(newAddress);
       LOG.debug("Acquired getTask client for request " + task.requestId);
     } catch (Exception e) {
