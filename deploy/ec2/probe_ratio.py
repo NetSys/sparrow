@@ -26,7 +26,7 @@ def main(argv):
     sparrow_branch = "debugging"
     num_backends = 2
     num_frontends = 1
-    cores_per_backend = 4
+    cores_per_backend = 3
     # Run each trial for 5 minutes.
     trial_length = 500
     num_preferred_nodes = 0
